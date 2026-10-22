@@ -5,73 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Caja Registradora - Restaurante</title>
   <link rel="stylesheet" href="estilos.css">
-  <!-- Carga de la biblioteca Dexie.js para IndexedDB -->
-  <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+  <!-- Librería Dexie.js para IndexedDB -->
+  <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
 </head>
 <body>
+
   <div class="contenedor">
-    <h2>🍕 Pide tu Combo 🍔</h2>
-    
-    <form id="formularioRestaurante">
-      <!-- 1. Plato Principal -->
+    <h2>🌮 Menú del Restaurante 🍔</h2>
+
+    <form id="formPedido">
+      <!-- Plato Principal -->
       <div class="seccion">
-        <label for="platoPrincipal">Elige tu plato principal:</label>
-        <select id="platoPrincipal" required>
-          <option value="pizza">Pizza Familiar — $12.00</option>
-          <option value="hamburguesa">Hamburguesa con Queso — $7.50</option>
-          <option value="tacos">Tacos Mexicanos (3 uds) — $8.50</option>
-          <option value="pasta">Pasta Alfredo — $9.00</option>
+        <label for="plato">Plato Principal:</label>
+        <select id="plato" required>
+          <option value="" disabled selected>Elige un platillo...</option>
+          <option value="Tacos de Asada">Tacos de Asada (3 uds) — $6.50</option>
+          <option value="Hamburguesa Doble">Hamburguesa Doble Queso — $7.50</option>
+          <option value="Burrito Supremo">Burrito Supremo — $8.00</option>
+          <option value="Pizza Personal">Pizza Personal Peperoni — $7.00</option>
         </select>
       </div>
 
-      <!-- 2. Tamaño de Bebida -->
+      <!-- Tamaño Bebida -->
       <div class="seccion">
         <label>Tamaño de la Bebida:</label>
         <div class="opciones-inline">
-          <input type="radio" id="bebidaP" name="tamanoBebida" value="pequena" checked>
-          <label for="bebidaP" style="font-weight: normal;">Pequeña (+$1.00)</label>
-
-          <input type="radio" id="bebidaM" name="tamanoBebida" value="mediana">
-          <label for="bebidaM" style="font-weight: normal;">Mediana (+$1.50)</label>
-
-          <input type="radio" id="bebidaG" name="tamanoBebida" value="grande">
-          <label for="bebidaG" style="font-weight: normal;">Grande (+$2.00)</label>
+          <label><input type="radio" name="bebida" value="pequena" checked> Pequeña ($1.00)</label>
+          <label><input type="radio" name="bebida" value="mediana"> Mediana ($1.75)</label>
+          <label><input type="radio" name="bebida" value="grande"> Grande ($2.50)</label>
         </div>
       </div>
 
-      <!-- 3. Acompañamientos / Extras -->
+      <!-- Extras -->
       <div class="seccion">
         <label>¿Deseas agregar extras?</label>
         <div class="checkbox-group">
           <div class="checkbox-item">
-            <input type="checkbox" id="extraPapas" value="papas">
-            <label for="extraPapas" style="font-weight: normal;">Papas Fritas (+$2.50)</label>
+            <input type="checkbox" id="extraQueso" value="Extra Queso">
+            <label for="extraQueso">🧀 Extra Queso (+$1.50)</label>
           </div>
           <div class="checkbox-item">
-            <input type="checkbox" id="extraHelado" value="helado">
-            <label for="extraHelado" style="font-weight: normal;">Helado de Vainilla (+$1.80)</label>
+            <input type="checkbox" id="extraGuacamole" value="Guacamole">
+            <label for="extraGuacamole">🥑 Guacamole (+$2.00)</label>
           </div>
           <div class="checkbox-item">
-            <input type="checkbox" id="extraPostre" value="postre">
-            <label for="extraPostre" style="font-weight: normal;">Pastel de Chocolate (+$3.00)</label>
+            <input type="checkbox" id="extraPapas" value="Papas Fritas">
+            <label for="extraPapas">🥔 Papas Fritas (+$2.50)</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="extraHelado" value="Helado Chocolate">
+            <label for="extraHelado">🍨 Helado de Chocolate (+$1.80)</label>
           </div>
         </div>
       </div>
 
-      <button type="submit">Calcular Cuenta y Guardar</button>
+      <button type="submit">Calcular Cuenta y Guardar 🛒</button>
     </form>
 
-    <!-- Recibo -->
+    <!-- Recibo Digital -->
     <div id="reciboRespuesta"></div>
 
-    <!-- PANEL DE CONTROL DE ADMINISTRACIÓN (INDEXEDB) -->
+    <!-- Panel de Administración -->
     <div class="panel-admin">
-      <h3>📋 Administración de Ventas</h3>
+      <h3>📋 Panel de Administración de Ventas</h3>
       <div class="opciones-inline">
-        <button type="button" id="btnVerHistorial" class="btn-azul">👁 Ver Historial</button>
-        <button type="button" id="btnBorrarHistorial" class="btn-rojo">🗑 Limpiar Base de Datos</button>
+        <button type="button" class="btn-azul" id="btnHistorial">👁 Ver Historial</button>
+        <button type="button" class="btn-rojo" id="btnLimpiar">🗑 Limpiar Base de Datos</button>
       </div>
-      <!-- Listado de la base de datos -->
       <div id="tablaHistorial"></div>
     </div>
   </div>
