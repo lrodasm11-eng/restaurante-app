@@ -1,138 +1,127 @@
-// ==========================================
-// 1. CONFIGURACIÓN DE LA BASE DE DATOS (IndexedDB)
-// ==========================================
-const db = new Dexie("RestauranteDB");
-
+// Configuración de IndexedDB con Dexie
+const db = new Dexie('RestauranteDB');
 db.version(1).stores({
-  pedidos: '++id, plato, bebida, extras, total, fecha'
+  ventas: '++id, plato, bebida, extras, total, fecha'
 });
 
-// ==========================================
-// 2. EVENTO DEL FORMULARIO
-// ==========================================
-document.getElementById('formularioRestaurante').addEventListener('submit', async function(event) {
-  event.preventDefault();
+// Precios
+const preciosPlatos = {
+  "Tacos de Asada": 6.50,
+  "Hamburguesa Doble": 7.50,
+  "Burrito Supremo": 8.00,
+  "Pizza Personal": 7.00
+};
 
-  const PRECIOS = {
-    pizza: 12.00,
-    hamburguesa: 7.50,
-    tacos: 8.50,
-    pasta: 9.00,
-    pequena: 1.00,
-    mediana: 1.50,
-    grande: 2.00,
-    papas: 2.50,
-    helado: 1.80,
-    postre: 3.00
-  };
+const preciosBebidas = {
+  "pequena": 1.00,
+  "mediana": 1.75,
+  "grande": 2.50
+};
 
-  let cuentaDetalle = "<strong>🧾 DETALLE DE TU PEDIDO:</strong><br><hr>";
-  let total = 0;
+const preciosExtras = {
+  "Extra Queso": 1.50,
+  "Guacamole": 2.00,
+  "Papas Fritas": 2.50,
+  "Helado Chocolate": 1.80
+};
 
-  // Capturar Plato
-  const platoSelect = document.getElementById('platoPrincipal');
-  const plato = platoSelect.value;
-  const nombrePlato = platoSelect.options[platoSelect.selectedIndex].text.split("—")[0].trim();
-  total += PRECIOS[plato];
-  cuentaDetalle += `• ${nombrePlato}: $${PRECIOS[plato].toFixed(2)}<br>`;
+// Evento Submit del Formulario
+document.getElementById('formPedido').addEventListener('submit', async function(e) {
+  e.preventDefault();
 
-  // Capturar Bebida
-  const bebidaSeleccionada = document.querySelector('input[name="tamanoBebida"]:checked').value;
-  total += PRECIOS[bebidaSeleccionada];
-  cuentaDetalle += `• Bebida (${bebidaSeleccionada}): $${PRECIOS[bebidaSeleccionada].toFixed(2)}<br>`;
+  const plato = document.getElementById('plato').value;
+  const bebida = document.querySelector('input[name="bebida"]:checked').value;
+  
+  // Capturar extras marcados
+  const extrasSeleccionados = [];
+  let totalExtras = 0;
 
-  // Capturar Extras
-  const quierePapas = document.getElementById('extraPapas').checked;
-  const quiereHelado = document.getElementById('extraHelado').checked;
-  const quierePostre = document.getElementById('extraPostre').checked;
-  let listaExtras = [];
-
-  if (quierePapas) {
-    total += PRECIOS.papas;
-    listaExtras.push("Papas Fritas");
-    cuentaDetalle += `• Extra Papas Fritas: $${PRECIOS.papas.toFixed(2)}<br>`;
+  if (document.getElementById('extraQueso').checked) {
+    extrasSeleccionados.push("Extra Queso");
+    totalExtras += preciosExtras["Extra Queso"];
   }
-  if (quiereHelado) {
-    total += PRECIOS.helado;
-    listaExtras.push("Helado");
-    cuentaDetalle += `• Extra Helado: $${PRECIOS.helado.toFixed(2)}<br>`;
+  if (document.getElementById('extraGuacamole').checked) {
+    extrasSeleccionados.push("Guacamole");
+    totalExtras += preciosExtras["Guacamole"];
   }
-  if (quierePostre) {
-    total += PRECIOS.postre;
-    listaExtras.push("Pastel Chocolate");
-    cuentaDetalle += `• Extra Pastel: $${PRECIOS.postre.toFixed(2)}<br>`;
+  if (document.getElementById('extraPapas').checked) {
+    extrasSeleccionados.push("Papas Fritas");
+    totalExtras += preciosExtras["Papas Fritas"];
+  }
+  if (document.getElementById('extraHelado').checked) {
+    extrasSeleccionados.push("Helado Chocolate");
+    totalExtras += preciosExtras["Helado Chocolate"];
   }
 
-  cuentaDetalle += `<hr><strong>💰 TOTAL A PAGAR: $${total.toFixed(2)}</strong>`;
+  // Cálculos
+  const precioPlato = preciosPlatos[plato] || 0;
+  const precioBebida = preciosBebidas[bebida] || 0;
+  const total = precioPlato + precioBebida + totalExtras;
+  const fechaAhora = new Date().toLocaleString();
 
-  // Mostrar el recibo en pantalla
-  const areaRecibo = document.getElementById('reciboRespuesta');
-  areaRecibo.innerHTML = cuentaDetalle;
-  areaRecibo.style.display = "block";
+  // Guardar en IndexedDB
+  await db.ventas.add({
+    plato: plato,
+    bebida: bebida,
+    extras: extrasSeleccionados.length > 0 ? extrasSeleccionados.join(', ') : 'Ninguno',
+    total: total,
+    fecha: fechaAhora
+  });
 
-  // Guardar en la Base de Datos (IndexedDB)
-  try {
-    await db.pedidos.add({
-      plato: nombrePlato,
-      bebida: bebidaSeleccionada,
-      extras: listaExtras.join(", ") || "Ninguno",
-      total: total,
-      fecha: new Date().toLocaleString()
-    });
-    console.log("¡Pedido guardado con éxito!");
-  } catch (error) {
-    console.error("Error al guardar en la base de datos: ", error);
-  }
+  // Mostrar Recibo
+  const recibo = document.getElementById('reciboRespuesta');
+  recibo.style.display = 'block';
+  recibo.innerHTML = `
+    <strong>🧾 DETALLE DE TU PEDIDO:</strong><br>
+    • 🍲 ${plato}: $${precioPlato.toFixed(2)}<br>
+    • 🥤 Bebida (${bebida}): $${precioBebida.toFixed(2)}<br>
+    • ➕ Extras: ${extrasSeleccionados.length > 0 ? extrasSeleccionados.join(', ') : 'Ninguno'} ($${totalExtras.toFixed(2)})<br>
+    <hr style="border: 0; border-top: 1px dashed #ffa502; margin: 8px 0;">
+    <strong>💰 TOTAL A PAGAR: $${total.toFixed(2)}</strong>
+  `;
 });
 
-// ==========================================
-// 3. FUNCIONALIDAD DE ADMINISTRACIÓN (IndexedDB)
-// ==========================================
-async function actualizarHistorialPantalla() {
-  const divHistorial = document.getElementById('tablaHistorial');
-  const todosLosPedidos = await db.pedidos.toArray();
+// Ver Historial
+document.getElementById('btnHistorial').addEventListener('click', async function() {
+  const historialDiv = document.getElementById('tablaHistorial');
+  const todasLasVentas = await db.ventas.toArray();
 
-  if (todosLosPedidos.length === 0) {
-    divHistorial.innerHTML = "<p style='text-align:center; color:#6c757d;'>No hay pedidos registrados todavía.</p>";
+  if (todasLasVentas.length === 0) {
+    historialDiv.style.display = 'block';
+    historialDiv.innerHTML = '<p style="text-align:center;">No hay ventas registradas aún.</p>';
     return;
   }
 
-  let htmlContenido = "";
-  let gananciasTotales = 0;
+  let cajaTotal = 0;
+  let htmlHistorial = '';
 
-  todosLosPedidos.forEach(function(pedido) {
-    gananciasTotales += pedido.total;
-    htmlContenido += `
+  todasLasVentas.forEach(v => {
+    cajaTotal += v.total;
+    htmlHistorial += `
       <div class="item-pedido">
-        <strong>Pedido #${pedido.id}</strong> — 📅 ${pedido.fecha}<br>
-        🍲 Plato: ${pedido.plato} | 🥤 Bebida: ${pedido.bebida}<br>
-        🍟 Extras: ${pedido.extras}<br>
-        💵 Subtotal: <strong>$${pedido.total.toFixed(2)}</strong>
+        <strong>Pedido #${v.id}</strong> — 📅 ${v.fecha}<br>
+        🍲 <strong>Plato:</strong> ${v.plato} | 🥤 <strong>Bebida:</strong> ${v.bebida}<br>
+        🍟 <strong>Extras:</strong> ${v.extras}<br>
+        💵 <strong>Subtotal:</strong> $${v.total.toFixed(2)}
       </div>
     `;
   });
 
-  htmlContenido = `<strong>💰 Caja Total: $${gananciasTotales.toFixed(2)}</strong><br><hr>` + htmlContenido;
-  divHistorial.innerHTML = htmlContenido;
-}
-
-// Botón: Mostrar / Ocultar Historial
-document.getElementById('btnVerHistorial').addEventListener('click', async function() {
-  const divHistorial = document.getElementById('tablaHistorial');
-  if (divHistorial.style.display === "none" || divHistorial.style.display === "") {
-    await actualizarHistorialPantalla();
-    divHistorial.style.display = "block";
-  } else {
-    divHistorial.style.display = "none";
-  }
+  historialDiv.style.display = 'block';
+  historialDiv.innerHTML = `
+    <div style="font-weight: bold; margin-bottom: 10px; color: #2ed573; text-align: center;">
+      💰 Caja Total: $${cajaTotal.toFixed(2)}
+    </div>
+    ${htmlHistorial}
+  `;
 });
 
-// Botón: Vaciar toda la Base de Datos
-document.getElementById('btnBorrarHistorial').addEventListener('click', async function() {
-  const confirmar = confirm("⚠ ¿Estás seguro de que deseas eliminar TODOS los pedidos del historial?");
-  if (confirmar) {
-    await db.pedidos.clear();
-    alert("Base de datos vaciada con éxito.");
-    actualizarHistorialPantalla();
+// Limpiar Base de Datos
+document.getElementById('btnLimpiar').addEventListener('click', async function() {
+  if (confirm('¿Estás seguro de que deseas borrar todo el historial de ventas?')) {
+    await db.ventas.clear();
+    document.getElementById('tablaHistorial').style.display = 'none';
+    document.getElementById('reciboRespuesta').style.display = 'none';
+    alert('¡Base de datos limpiada con éxito!');
   }
 });
